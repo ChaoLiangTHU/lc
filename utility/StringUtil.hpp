@@ -410,17 +410,15 @@ public:
 //		ss << t;
 //		return ss.str();
 //	}
-
+/**
 #define __num2strfunc__(type)	static std::string num2str(type t) {\
 		std::stringstream ss;\
 		ss << t;\
 		return ss.str();\
 	}
-
+*/
 	//gcc 4.4.2上无法编译
-//#define __num2strfunc__(type)	inline static std::string num2str(type t) {
-//		return std::to_string(t);
-//	}
+#define __num2strfunc__(type)	inline static std::string num2str(type t) {	return std::to_string(t);}
 
 	__num2strfunc__(int)
 	__num2strfunc__(long)

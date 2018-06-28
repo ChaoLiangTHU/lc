@@ -535,6 +535,81 @@ public:
 
 };
 
+
+
+/**
+ * 将两个[-511,511]之间的整数编码到一个float中，
+ * 或者将两个[-1,1]之间的flaot编码到一个float中（有一定的误差，最大约0.001）
+ */
+class EncodeTwoIntInFloat {
+	//#define PRINTBININT(x) std::cout<<__LINE__<<"; \t"<<#x<<"=\t"<<std::bitset<sizeof(decltype(x))*8>(x)<<std::endl
+public:
+	static constexpr int nbit = 10;
+	static constexpr int nbitm1 = nbit - 1;
+	static constexpr int nbita1 = nbit + 1;
+	static constexpr int mask = (1 << nbitm1) - 1;
+
+	static constexpr float max_val = mask - 1;
+
+	static float encode(int a, int b) {
+#ifdef LCDebug
+		if(a<-mask || a>mask) throw a;
+		if(b<-mask || b>mask) throw b;
+#endif
+		int r = 0;
+		if (a < 0) {
+			a = -a;
+			r = (a << 1 | 1) << nbit;
+		} else {
+			r = a << nbita1;
+		}
+
+		if (b < 0) {
+			b = -b;
+			r |= (b << 1 | 1);
+		} else {
+			r |= b << 1;
+		}
+		return (float) r;
+	}
+
+	static std::pair<int, int> decode(float f) {
+		int s = static_cast<int>(f);
+		bool negB = s & 1;
+		int b = s >> 1 & mask;
+		if (negB)
+			b = -b;
+
+		s >>= nbit;
+		bool negA = s & 1;
+		s >>= 1;
+		if (negA)
+			s = -s;
+		return {s,b};
+	}
+
+	/**
+	 * 将两个[-1,1]之间的flaot编码到一个float中（有一定的误差，最大约0.001）
+	 * @param a
+	 * @param b
+	 * @return
+	 */
+	static inline float encodeFromFloat(float a, float b) {
+		return encode(a * max_val, b * max_val);
+	}
+
+	/**
+	 * 解码encodeFromFloat的编码结果
+	 * @param f
+	 * @return
+	 */
+	static inline std::pair<float, float> decodeToFloat(float f) {
+		auto d = decode(f);
+		return {d.first/max_val,d.second/max_val};
+	}
+};
+
+
 }/* end of namespace Discretize */
 } // end of namespace LC
 

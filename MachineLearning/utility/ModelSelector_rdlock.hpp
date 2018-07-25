@@ -8,7 +8,6 @@
 #ifndef LC_MACHINELEARNING_UTILITY_MODELSELECTOR_RDLOCK_HPP_
 #define LC_MACHINELEARNING_UTILITY_MODELSELECTOR_RDLOCK_HPP_
 
-
 #include <unistd.h>  // 更新到gcc 4.8后 ::sleep(second)    可以更换为c++11的标准库 std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds))
 #include <functional>
 #include <thread>
@@ -35,34 +34,34 @@ namespace LC {
  * 4、释放锁
  * 	示例用法：
 
-	LC::ModelSelector<ModelT> ms;
-	ms.checkNewModelPerSeconds = 10;
-	ms.modelIsDir = true;
-	ms.modelParentFolder = "/home/colinliang/tmp/models";
+ LC::ModelSelector<ModelT> ms;
+ ms.checkNewModelPerSeconds = 10;
+ ms.modelIsDir = true;
+ ms.modelParentFolder = "/home/colinliang/tmp/models";
 
-	ms.modelPrefix = "net_model";
-	ms.modelCheckUpFile = "modelVersion.txt";
-//	ms.modelVersionCheckUpFile="v4.txt";
+ ms.modelPrefix = "net_model";
+ ms.modelCheckUpFile = "modelVersion.txt";
+ //	ms.modelVersionCheckUpFile="v4.txt";
 
-	ms.process_idx=1;
-	ms.process_num=2;
+ ms.process_idx=1;
+ ms.process_num=2;
 
-	ms.loadModelAndStartDetectingNewModel();
-	while (true) {
-		::sleep(3);
-		LC::Timer t;
-		for (int i = 0; i < 1; ++i){
-			auto& mut=ms.getMutex();
-			if (mut.try_lock_shared_for(std::chrono::milliseconds(100))) {
-				std::cout << "PCTR: " << ms.getModel(&mut).predict() << std::endl;
-				mut.unlock();
-			} else {
-				lclogf("Fail to get lock");
-			}
-		}
-//		std::cout<<t.getElapseTime_in_second_and_restart()<<"s"<<std::endl;
+ ms.loadModelAndStartDetectingNewModel();
+ while (true) {
+ ::sleep(3);
+ LC::Timer t;
+ for (int i = 0; i < 1; ++i){
+ auto& mut=ms.getMutex();
+ if (mut.try_lock_shared_for(std::chrono::milliseconds(100))) {
+ std::cout << "PCTR: " << ms.getModel(&mut).predict() << std::endl;
+ mut.unlock();
+ } else {
+ lclogf("Fail to get lock");
+ }
+ }
+ //		std::cout<<t.getElapseTime_in_second_and_restart()<<"s"<<std::endl;
 
-	}
+ }
  */
 template<typename ModelClass>
 class ModelSelector {
@@ -100,9 +99,9 @@ public:
 	long long next_model_load_time;
 	ModelSelector() :
 			numModelLoad(0), modelParentFolder(""), modelPrefix("net_model"), modelVersionCheckUpFile(""), modelCheckUpFile(
-					"ModelSentinel.txt"), model1_load_time(-1), model2_load_time(-1), modelIsDir(true), pCurModel(
-			NULL), pLoadModelThread(NULL), numModel2keep(2), checkNewModelPerSeconds(1800), process_idx(0), process_num(
-					1), tryReleaseOldModelAfterSeconds(1), next_model_load_time(-1) {
+					"ModelSentinel.txt"), model1_load_time(-1), model2_load_time(-1), pCurModel(
+			NULL), modelIsDir(true), pLoadModelThread(NULL), numModel2keep(2), checkNewModelPerSeconds(1800), process_idx(
+					0), process_num(1), tryReleaseOldModelAfterSeconds(1), next_model_load_time(-1) {
 		lclogfl("ModelSelector constructor at ptr: %ulld", (unsigned long long )(this));
 	}
 
@@ -118,10 +117,10 @@ public:
 		return *pCurModel;
 	}
 
-	ModelClass& getModel(LC::shared_timed_mutex* pMutex){
-		if(pMutex==&model2mutex){
+	ModelClass& getModel(LC::shared_timed_mutex* pMutex) {
+		if (pMutex == &model2mutex) {
 			return model2;
-		}else {
+		} else {
 			return model1;
 		}
 	}
@@ -225,7 +224,13 @@ public:
 			lclognvl(cur_time);
 			lclognvl(time2wait);
 #endif
-
+			if (time2wait < 0 || time2wait > 86400) {
+				std::cout << "WARN: Model selector, time2wait = " << time2wait
+						<< ";  time2wait < 0 || time2wait > 86400, set time2wait to " << checkNewModelPerSeconds
+						<< std::endl;
+				time2wait = checkNewModelPerSeconds;
+				next_model_load_time = cur_time + time2wait;
+			}
 			::sleep(time2wait); // 更新到gcc 4.8后 ::sleep(second)    可以更换为c++11的标准库 std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds))
 			loadNewModel();
 			::sleep(3); // 如果外部使用model时忘记加锁了，sleep 1秒可以防止一定的误操作
@@ -266,9 +271,9 @@ public:
 		if (pCurModel == &model1) {
 			if (model2mutex.try_lock_for(std::chrono::milliseconds(timeout_milliseconds))) {
 #ifdef LCDebug
-		lclogfl("try_to_releaseUnusedModel2");
-		lclogfl("\tmodel1_mutex: %s",model1mutex.toString().c_str());
-		lclogfl("\tmodel2_mutex: %s",model2mutex.toString().c_str());
+				lclogfl("try_to_releaseUnusedModel2");
+				lclogfl("\tmodel1_mutex: %s",model1mutex.toString().c_str());
+				lclogfl("\tmodel2_mutex: %s",model2mutex.toString().c_str());
 #endif
 				lclogfl("set model2 to empty model");
 				model2 = ModelClass();
@@ -280,9 +285,9 @@ public:
 		} else if (pCurModel == &model2) {
 			if (model1mutex.try_lock_for(std::chrono::milliseconds(timeout_milliseconds))) {
 #ifdef LCDebug
-		lclogfl("try_to_releaseUnusedModel1");
-		lclogfl("\tmodel1_mutex: %s",model1mutex.toString().c_str());
-		lclogfl("\tmodel2_mutex: %s",model2mutex.toString().c_str());
+				lclogfl("try_to_releaseUnusedModel1");
+				lclogfl("\tmodel1_mutex: %s",model1mutex.toString().c_str());
+				lclogfl("\tmodel2_mutex: %s",model2mutex.toString().c_str());
 #endif
 				lclogfl("set model1 to empty model");
 				model1 = ModelClass();
@@ -442,7 +447,5 @@ public:
 };
 
 }
-
-
 
 #endif /* LC_MACHINELEARNING_UTILITY_MODELSELECTOR_RDLOCK_HPP_ */

@@ -172,6 +172,20 @@ public:
 			return true;
 		}
 	}
+
+	static long long get_file_size(const string& filename){
+		std::ifstream in(filename,std::ios::ate|std::ios::binary);
+		if(!in){
+			in.close();
+			return -1;
+		}else{
+			long long s=in.tellg();
+			in.close();
+			return s;
+		}
+	}
+
+
 	static bool isdir(const string& dir_name) {
 		if (dir_name.compare("/") == 0)
 			return true;

@@ -27,9 +27,9 @@ class shared_timed_mutex {
 	int readcount = 0;
 	bool is_writing = false;
 public:
-	std::string toString(){
+	std::string toString() {
 		std::ostringstream ss;
-		ss<<"LC::shared_timed_mutex: readcount = "<<readcount<<", \tis_writing = "<<is_writing;
+		ss << "LC::shared_timed_mutex: readcount = " << readcount << ", \tis_writing = " << is_writing;
 		return ss.str();
 	}
 	template<class _Rep, class _Period>
@@ -84,6 +84,17 @@ public:
 		is_writing = false;
 		m.unlock();
 //		cv.notify_all();
+	}
+};
+
+class shared_timed_mutex_shared_guard {
+public:
+	shared_timed_mutex* pmut;
+	shared_timed_mutex_shared_guard(shared_timed_mutex* pmut) :
+			pmut(pmut) {
+	}
+	~shared_timed_mutex_shared_guard() {
+		pmut->unlock_shared();
 	}
 };
 

@@ -10,7 +10,7 @@
 
 #include <vector>
 #include <algorithm>
-//#include <unordered_map>
+#include <unordered_map>
 
 #include <cstdlib>
 #include <sstream>
@@ -231,7 +231,7 @@ public:
 	}
 	virtual ~Map() {
 	}
-	Map(std::string paramStr, std::string map_file_folder, DstType maxIndexInclude = -1) {
+	Map(std::string paramStr, std::string map_file_folder, DstType maxIndexInclude = -1, char delimiter = '\a') {
 //		cout << "maxIndexInclude: " << maxIndexInclude << endl;
 //		cout << "size of map (init): " << key2value_.size() << endl;
 		std::vector<std::string> params = LC::Str::split(paramStr, ';'); //config_file, default_value, key_index, value_index
@@ -241,7 +241,7 @@ public:
 		default_value_ = LC::Str::str2num<DstType>(params[1]);
 		const int key_index = LC::Str::str2num<int>(params[2]);
 		const int value_index = LC::Str::str2num<int>(params[3]);
-		std::vector<vector<std::string> > key_idx_count_name = LC::CSVReader::readCSV(filename, '\a', false);
+		std::vector<vector<std::string> > key_idx_count_name = LC::CSVReader::readCSV(filename, delimiter, false);
 		for (unsigned int i = 0; i < key_idx_count_name.size(); ++i) {
 			const std::vector<std::string>& kicn = key_idx_count_name[i];
 
@@ -253,6 +253,7 @@ public:
 				}
 		}
 //		cout << "size of map: " << key2value_.size() << endl;
+
 	}
 
 	Map(std::map<SrcType, DstType>& key2value) :
@@ -275,12 +276,115 @@ public:
 		return key2value_;
 	}
 
+	unsigned long long size() {
+		return key2value_.size() + 1u;
+	}
+
 	DstType& operator[](const SrcType key) {
 		return key2value_[key];
 	}
 private:
 	std::map<SrcType, DstType> key2value_;
 	DstType default_value_;
+};
+
+template<typename SrcType, typename DstType = int>
+class Map_v2: public Discretize<SrcType, DstType> {
+public:
+	Map_v2() {
+	}
+	virtual ~Map_v2() {
+	}
+	Map_v2(std::string filename, DstType default_value, int key_index = 0, int value_index = 1,
+			DstType maxIndexInclude = -1, char delimiter = '\a', long long* pSize = nullptr) {
+		default_value_ = default_value;
+		std::vector<vector<std::string> > key_idx_count_name = LC::CSVReader::readCSV(filename, delimiter, false);
+		key2value_.reserve(key_idx_count_name.size() * 5 / 4);
+//		cout<<"# lines read: "<<key_idx_count_name.size()<<std::endl;
+		for (unsigned int i = 0; i < key_idx_count_name.size(); ++i) {
+			const std::vector<std::string>& kicn = key_idx_count_name[i];
+			DstType idx = LC::Str::str2num<DstType>(kicn[value_index]);
+			if (idx > 0)
+				if (maxIndexInclude < 0 || idx <= maxIndexInclude) {
+					key2value_[LC::Str::str2num<SrcType>(kicn[key_index])] = idx;
+//					cout<<"valid: " << LC::Str::str2num<SrcType>(kicn[key_index]) << " -> " << idx << endl;
+				}
+//			cout << LC::Str::str2num<SrcType>(kicn[key_index]) << " -> " << idx << endl;
+		}
+		std::cerr << "# valid kv read: " << key2value_.size() << " / " << key_idx_count_name.size() << std::endl;
+		if (pSize != nullptr)
+			*pSize = (long long) (this->size());
+	}
+
+	Map_v2(std::unordered_map<SrcType, DstType>& key2value) :
+			key2value_(key2value) {
+
+	}
+	virtual DstType operator()(const SrcType& value) {
+		typename std::unordered_map<SrcType, DstType>::iterator it = key2value_.find(value);
+		if (it == key2value_.end()) {
+			return default_value_;
+		} else {
+			return it->second;
+		}
+	}
+	const std::unordered_map<SrcType, DstType>& getMap() const {
+		return key2value_;
+	}
+
+	std::unordered_map<SrcType, DstType>& getMapRef() {
+		return key2value_;
+	}
+	unsigned long long size() {
+		return key2value_.size() + 1u;
+	}
+	DstType& operator[](const SrcType key) {
+		return key2value_[key];
+	}
+private:
+	std::unordered_map<SrcType, DstType> key2value_;
+	DstType default_value_;
+};
+
+template<typename SrcType, typename DstType = float>
+class Sigmoid: public Discretize<SrcType, DstType> {
+	SrcType in_a_ = 1, in_b_ = 0;
+	SrcType out_a_ = 1, out_b_ = 0;
+public:
+	Sigmoid(SrcType in_a = 1, SrcType in_b = 0, SrcType out_a = 1, SrcType out_b = 0) :
+			in_a_(in_a), in_b_(in_b), out_a_(out_a), out_b_(out_b) {
+	}
+	virtual ~ Sigmoid() {
+	}
+	inline static DstType sigmoid(const SrcType in) {
+		return static_cast<DstType>(1 / (1 + std::exp(-in)));
+	}
+	virtual DstType operator()(const SrcType& value) {
+		return out_a_ * sigmoid(in_a_ * value + in_b_) + out_b_;
+	}
+
+};
+
+template<typename SrcType, typename DstType = float>
+class ExposureCTR: public Discretize<SrcType, DstType> {
+	SrcType virtual_play_num_ = 1, virtual_exposure_num_ = 0;
+	SrcType ctr_power_ = 1, play_power_ = 0;
+public:
+	ExposureCTR(SrcType virtual_play_num = 1, SrcType virtual_exposure_num = 0, SrcType ctr_power = 1,
+			SrcType play_power = 0) :
+			virtual_play_num_(virtual_play_num), virtual_exposure_num_(virtual_exposure_num), ctr_power_(ctr_power), play_power_(
+					play_power) {
+	}
+	virtual ~ ExposureCTR() {
+	}
+	virtual DstType operator()(const SrcType& value) {
+		int exposure_num = int(value);
+		SrcType play_num = exposure_num * (value - exposure_num);
+		SrcType ctr = (play_num + virtual_play_num_) / (exposure_num + virtual_exposure_num_);
+		auto r = std::pow(ctr, ctr_power_) * std::pow(play_num, play_power_);
+		return static_cast<DstType>(r);
+	}
+
 };
 
 /**
@@ -535,8 +639,6 @@ public:
 
 };
 
-
-
 /**
  * 将两个[-511,511]之间的整数编码到一个float中，
  * 或者将两个[-1,1]之间的flaot编码到一个float中（有一定的误差，最大约0.001）
@@ -550,12 +652,23 @@ public:
 	static constexpr int mask = (1 << nbitm1) - 1;
 
 	static constexpr float max_val = mask - 1;
+	static constexpr float neg_max_val = -max_val;
 
 	static float encode(int a, int b) {
 #ifdef LCDebug
 		if(a<-mask || a>mask) throw a;
 		if(b<-mask || b>mask) throw b;
 #endif
+		if (a > max_val)
+			a = max_val;
+		else if (a < neg_max_val)
+			a = neg_max_val;
+
+		if (b > max_val)
+			b = max_val;
+		else if (b < neg_max_val)
+			b = neg_max_val;
+
 		int r = 0;
 		if (a < 0) {
 			a = -a;
@@ -608,7 +721,6 @@ public:
 		return {d.first/max_val,d.second/max_val};
 	}
 };
-
 
 }/* end of namespace Discretize */
 } // end of namespace LC

@@ -306,10 +306,14 @@ public:
 		return info;
 	}
 
-	~ FeedForwardNet() {
+	void clear() {
 		for (unsigned int i = 0; i < layers.size(); ++i) {
 			delete layers[i];
 		}
+		layers.clear();
+	}
+	~ FeedForwardNet() {
+		clear();
 	}
 
 	void addAffine(const Mat& W, const Mat& b) {

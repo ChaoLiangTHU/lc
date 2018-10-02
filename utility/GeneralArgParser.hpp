@@ -32,6 +32,17 @@ public:
 		}
 	}
 
+	GeneralArgParser(std::vector<std::string> kwargs) {
+		for (const auto& s:kwargs) {
+			auto kv = Str::split(s, '=');
+			if (kv.size() == 1u)
+				continue;
+			if (kv.size() > 2)
+				throw std::invalid_argument(s);
+			args[ kv[0]] = kv[1];
+		}
+	}
+
 	template<typename ValType>
 	ValType get(const std::string& key, const ValType& default_val) {
 		auto it = args.find(key);

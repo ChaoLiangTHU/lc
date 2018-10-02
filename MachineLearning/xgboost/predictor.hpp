@@ -16,6 +16,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <iomanip>
 #include <vector>
 #include <string>
 namespace LC {
@@ -304,7 +305,7 @@ public:
 
 	string to_lua_script(int level = 0, int idx_start_from = 1, string indent = "  ", string var_name = "score") {
 
-		std::stringstream ss;
+		std::stringstream ss;ss<<std::setprecision(20);
 		for (int i = 0; i < level; ++i)
 			ss << indent;
 		ss << "function xgboost_predict(fv)" << std::endl;
@@ -334,7 +335,7 @@ public:
 	string to_java_code(bool cpp_version = false, int level = 0, int idx_start_from = 0, string indent = "  ",
 			string var_name = "score") {
 
-		std::stringstream ss;
+		std::stringstream ss;ss<<std::setprecision(20);
 		for (int i = 0; i < level; ++i)
 			ss << indent;
 		if (cpp_version) {

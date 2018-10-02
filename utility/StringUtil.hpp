@@ -80,14 +80,13 @@ inline long long int str2num(const char* p, char** pend) {
 
 class Str {
 
-
 private:
 	static int find_utf8_start_char_less(const char* pch, int pos) {
 		if (pos <= 0)
 			return 0;
 		while (pos >= 0) {
-	//		cout << ch[pos] << ": " << (int) (*((unsigned char*) (ch + pos))) << endl;
-			unsigned char ch=pch[pos];
+			//		cout << ch[pos] << ": " << (int) (*((unsigned char*) (ch + pos))) << endl;
+			unsigned char ch = pch[pos];
 			if (ch < (unsigned char) (0x80) || ch >= (unsigned char) (0xC0)) //https://en.wikipedia.org/wiki/UTF-8
 				return pos;
 			else
@@ -108,13 +107,11 @@ public:
 		if (size_in_byte >= str.size())
 			return str.substr(0, str.size());
 		int pos = find_utf8_start_char_less(str.data(), size_in_byte);
-	//	cout << "expected size: " << size_in_byte << "; \ttrue truncated size: " << pos << endl;
+		//	cout << "expected size: " << size_in_byte << "; \ttrue truncated size: " << pos << endl;
 		return str.substr(0, pos);
 	}
 
-
 private:
-
 
 //	///< copied from http://stackoverflow.com/questions/236129/split-a-string-in-c
 //	static std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
@@ -133,14 +130,8 @@ public:
 //		return elems;
 //	}
 
-
-
-
-
-
 ///< http://blog.csdn.net/butterfly_dreaming/article/details/10142443
-	static std::vector<std::string> split(const std::string& s,
-			const char delim) {
+	static std::vector<std::string> split(const std::string& s, const char delim) {
 		std::vector<std::string> ret;
 		size_t last = 0;
 		size_t index = s.find_first_of(delim, last);
@@ -156,8 +147,7 @@ public:
 	}
 
 	///< http://blog.csdn.net/butterfly_dreaming/article/details/10142443
-	static std::vector<std::string> split(const std::string& s,
-			const std::string& delim) {
+	static std::vector<std::string> split(const std::string& s, const std::string& delim) {
 		std::vector<std::string> ret;
 		size_t last = 0;
 		size_t index = s.find_first_of(delim, last);
@@ -173,8 +163,7 @@ public:
 	}
 
 	///<   http://blog.csdn.net/butterfly_dreaming/article/details/10142443
-	static std::string trim(const std::string &s, std::string eliminators =
-			" \t\n") {
+	static std::string trim(const std::string &s, std::string eliminators = " \t\n") {
 		std::string r = s;
 		if (r.empty()) {
 			return r;
@@ -184,16 +173,14 @@ public:
 		return r;
 	}
 
-	static std::vector<std::string> trim(const std::vector<std::string>& vs,
-			std::string eliminators = " \t\n") {
+	static std::vector<std::string> trim(const std::vector<std::string>& vs, std::string eliminators = " \t\n") {
 		std::vector<std::string> rs;
 		for (unsigned int i = 0; i < vs.size(); ++i)
 			rs.push_back(trim(vs[i]));
 		return rs;
 	}
 
-	static std::string& trim_inplace(std::string &s, std::string eliminators =
-			" \t\n") {
+	static std::string& trim_inplace(std::string &s, std::string eliminators = " \t\n") {
 		if (s.empty()) {
 			return s;
 		}
@@ -202,11 +189,36 @@ public:
 		return s;
 	}
 
-	static std::vector<std::string>& trim_inplace(std::vector<std::string>& vs,
-			std::string eliminators = " \t\n") {
+	static std::vector<std::string>& trim_inplace(std::vector<std::string>& vs, std::string eliminators = " \t\n") {
 		for (unsigned int i = 0; i < vs.size(); ++i)
 			trim_inplace(vs[i]);
 		return vs;
+	}
+
+	static std::string& replace_inplace(std::string& s, char from, char to) { //https://stackoverflow.com/questions/2896600/how-to-replace-all-occurrences-of-a-character-in-string
+		std::replace(s.begin(), s.end(), from, to);
+		return s;
+	}
+	static std::string replace(const std::string& s, char from, char to) { //https://stackoverflow.com/questions/2896600/how-to-replace-all-occurrences-of-a-character-in-string
+		std::string r = s.c_str(); //https://stackoverflow.com/questions/4751446/alternative-of-strcpy-in-c
+		std::replace(r.begin(), r.end(), from, to);
+		return r;
+	}
+	/**
+	 * 字符串替换，注意传入的不是引用，因而是新建了一个字符串
+	 * @param str
+	 * @param from
+	 * @param to
+	 * @return
+	 */
+	std::string replace(const std::string& s, const std::string& from, const std::string& to) { //https://stackoverflow.com/questions/2896600/how-to-replace-all-occurrences-of-a-character-in-string
+		std::string r = s.c_str(); //https://stackoverflow.com/questions/4751446/alternative-of-strcpy-in-c
+		size_t start_pos = 0;
+		while ((start_pos = r.find(from, start_pos)) != std::string::npos) {
+			r.replace(start_pos, from.length(), to);
+			start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
+		}
+		return r;
 	}
 
 	static void printStrVec(const vector<string>& vs) {
@@ -215,7 +227,6 @@ public:
 			cout << "\tlen=" << vs[i].size() << ":\t" << vs[i] << endl;
 		}
 	}
-
 
 	template<typename T>
 	static string vector2string(const vector<T>& vec, string splitStr = ", ") {
@@ -227,14 +238,15 @@ public:
 		ss << "]";
 		return ss.str();
 	}
-	
+
 	template<typename T>
 	static inline std::string vec2str(const vector<T>& vec, string splitStr = ", ") {
-		return vector2string(vec,splitStr);
+		return vector2string(vec, splitStr);
 	}
-	
-	template<typename K,typename V>
-	static string vectpair2string(const vector<std::pair<K,V>>& vec, string delimiter = "; ",string kv_delimiter=", ") {
+
+	template<typename K, typename V>
+	static string vectpair2string(const vector<std::pair<K, V>>& vec, string delimiter = "; ", string kv_delimiter =
+			", ") {
 		std::stringstream ss;
 		ss << "[";
 		for (unsigned int i = 0; i < vec.size(); ++i) {
@@ -249,24 +261,24 @@ public:
 //		return t;
 //	}
 	static std::string toLowerCase(const std::string& data) {
-		std::string ret(data);
+		std::string ret;
+		ret.resize(data.size());
 		for (unsigned int i = 0; i < ret.size(); ++i)
-			ret[i] = std::tolower(ret[i]);
+			ret[i] = std::tolower(data[i]);
 		return ret;
 	}
 
 	static bool startsWith(const std::string& str, const std::string& sub) {
 //		return str.size() >= sub.size()
 //				&& str.substr(0, sub.size()).compare(sub) == 0;
-		return str.rfind(sub,0)==0u;
+		return str.rfind(sub, 0) == 0u;
 	}
 
 	static bool endsWith(const std::string& str, const std::string& sub) {
 //		return str.size() >= sub.size()
 //				&& str.substr(str.size() - sub.size(), sub.size()).compare(sub)
 //						== 0;
-		return str.size() >= sub.size()
-					&& str.find(sub,str.size()-sub.size())==0u;
+		return str.size() >= sub.size() && str.find(sub, str.size() - sub.size()) == 0u;
 	}
 
 	static bool contains(const std::string& str, const std::string& sub) {
@@ -322,13 +334,11 @@ public:
 		return std::strtol(p.c_str(), pend, 10);
 	}
 
-	inline static long long int str2longlong(const char* p, char** pend =
-			(char**) 0) {
+	inline static long long int str2longlong(const char* p, char** pend = (char**) 0) {
 		return std::strtoll(p, pend, 10);
 	}
 
-	inline static long long int str2longlong(const string& p, char** pend =
-			(char**) 0) {
+	inline static long long int str2longlong(const string& p, char** pend = (char**) 0) {
 		return std::strtoll(p.c_str(), pend, 10);
 	}
 
@@ -339,9 +349,8 @@ public:
 
 	template<typename T>
 	inline static T str2num(const string& str) {
-		return LC::Private::str2num<T>(str.data(),(char**)0);
+		return LC::Private::str2num<T>(str.data(), (char**) 0);
 	}
-
 
 	template<typename T>
 	static std::vector<T> str2numVec(const char* p, int len = -1) {
@@ -366,7 +375,7 @@ public:
 		}
 		return ds;
 	}
-	
+
 	/**
 	 * 与str2numVec 不同， 该函数解析内容不包括 INF，NAN， 0x开头的数等；
 	 * 但是可以支持解析存在其他字母的情况，比如3:[f1<19.5] yes=7,no=8,missing=-7 会解析出 3,1,19.5,7,8,-7
@@ -403,25 +412,23 @@ public:
 
 	}
 
-
 //	template<typename T>   // 无法找到该方法。。。。好奇怪
 //	static std::string num2str(T t) {
 //		std::stringstream ss;
 //		ss << t;
 //		return ss.str();
 //	}
-/**
-#define __num2strfunc__(type)	static std::string num2str(type t) {\
+	/**
+	 #define __num2strfunc__(type)	static std::string num2str(type t) {\
 		std::stringstream ss;\
 		ss << t;\
 		return ss.str();\
 	}
-*/
+	 */
 	//gcc 4.4.2上无法编译
 #define __num2strfunc__(type)	inline static std::string num2str(type t) {	return std::to_string(t);}
 
-	__num2strfunc__(int)
-	__num2strfunc__(long)
+	__num2strfunc__(int)__num2strfunc__(long)
 	__num2strfunc__(long long)
 	__num2strfunc__(float)
 	__num2strfunc__(double)

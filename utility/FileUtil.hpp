@@ -7,6 +7,7 @@
 
 #ifndef LC_UTILITY_FILEUTIL_HPP_
 #define LC_UTILITY_FILEUTIL_HPP_
+#include <stdlib.h>
 #include <string>
 #include <vector>
 #include <utility>
@@ -38,14 +39,17 @@ public:
 	}
 
 	static string join(const string& path, const string& name) {
-		if (path.size() == 0)
+		std::stringstream ss;
+		if (path.empty())
 			return name;
-		char last = path[path.size() - 1];
+
+		char last = path[path.size() - 1u];
 		if (last == '\\' || last == '/') {
-			return path + name;
+			ss<<path<<name;
 		} else {
-			return path+ "/" + name;
+			ss<<path <<'/'<<name;
 		}
+		return ss.str();
 	}
 
 	static pair<vector<string>, vector<string> > listFilesAndDirs(const string& dir_name) { ///< 返回文件列表和 子目录列表(只包含在dir_name下的文件/路径名，不包含dir_name)； 另一种方法时使用linux的glob.h ， 或者C++ 17的filesystem
@@ -76,10 +80,10 @@ public:
 		vector<string>& fs = f_d.first;
 		vector<string>& ds = f_d.second;
 		for (unsigned int i = 0; i < fs.size(); ++i) {
-			fs[i] = join(dir_name,fs[i]);
+			fs[i] = join(dir_name, fs[i]);
 		}
 		for (unsigned int i = 0; i < ds.size(); ++i) {
-			ds[i] = join(dir_name,ds[i]);
+			ds[i] = join(dir_name, ds[i]);
 		}
 		return f_d;
 	}
@@ -107,7 +111,7 @@ public:
 	static vector<string> listFiles_fullpath(const string& dir_name) { ///< 返回文件列表和 子目录列表(绝对路径)； 另一种方法时使用linux的glob.h ， 或者C++ 17的filesystem
 		vector<string> fs = listFiles(dir_name);
 		for (unsigned int i = 0; i < fs.size(); ++i) {
-			fs[i] = join(dir_name,fs[i]);
+			fs[i] = join(dir_name, fs[i]);
 		}
 		return fs;
 	}
@@ -117,7 +121,7 @@ public:
 		vector<string> fsfiltered;
 		for (unsigned int i = 0; i < fs.size(); ++i) {
 			if (LC::Str::startsWith(fs[i], prefix))
-				fsfiltered.push_back(join(dir_name,fs[i]));
+				fsfiltered.push_back(join(dir_name, fs[i]));
 		}
 		return fsfiltered;
 	}
@@ -144,7 +148,7 @@ public:
 	static vector<string> listDirs_fullpath(const string& dir_name) { ///< 返回文件列表和 子目录列表(绝对路径)； 另一种方法时使用linux的glob.h ， 或者C++ 17的filesystem
 		vector<string> ds = listDirs(dir_name);
 		for (unsigned int i = 0; i < ds.size(); ++i) {
-			ds[i] = join(dir_name,ds[i]);
+			ds[i] = join(dir_name, ds[i]);
 		}
 		return ds;
 	}
@@ -153,13 +157,11 @@ public:
 		vector<string> dsf;
 		for (unsigned int i = 0; i < ds.size(); ++i) {
 			if (LC::Str::startsWith(ds[i], prefix)) {
-				dsf.push_back(join(dir_name,ds[i]));
+				dsf.push_back(join(dir_name, ds[i]));
 			}
 		}
 		return dsf;
 	}
-
-
 
 	static bool isfile(const string& filename) {
 		std::fstream f;
@@ -173,18 +175,17 @@ public:
 		}
 	}
 
-	static long long get_file_size(const string& filename){
-		std::ifstream in(filename,std::ios::ate|std::ios::binary);
-		if(!in){
+	static long long get_file_size(const string& filename) {
+		std::ifstream in(filename, std::ios::ate | std::ios::binary);
+		if (!in) {
 			in.close();
 			return -1;
-		}else{
-			long long s=in.tellg();
+		} else {
+			long long s = in.tellg();
 			in.close();
 			return s;
 		}
 	}
-
 
 	static bool isdir(const string& dir_name) {
 		if (dir_name.compare("/") == 0)
@@ -207,6 +208,13 @@ public:
 		return ret;
 	}
 
+	static bool mkdir(const string& dir_name) {
+		if (isdir(dir_name))
+			return true;
+		auto p=std::string("mkdir ") + dir_name;
+		int r = std::system(p.c_str());
+		return r == 0;
+	}
 };
 
 class ZipUtil {

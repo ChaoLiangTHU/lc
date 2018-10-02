@@ -112,6 +112,20 @@ public:
 	string operator[](string varName) {
 		return configs[varName];
 	}
+
+	template<typename MapType>
+	static unsigned long long dump_key_count_iterable(std::string dump_file, const MapType& m, int min_count = 0,
+			char delimiter = '\t') {
+		unsigned long long count = 0;
+		std::fstream f(dump_file.c_str(), std::ios::out);
+		for (const auto& kv : m) {
+			if ((long long)kv.second >= min_count) {
+				f << kv.first << delimiter << kv.second << std::endl;
+				count++;
+			}
+		}
+		return count;
+	}
 };
 
 class Vector_ConfigReader { //每行为一个以某个字符分割的配置文件读取类
@@ -158,7 +172,7 @@ class LibSVM_Reader { //每行为一个以某个字符分割的配置文件读�
 public:
 
 	template<typename T>
-	static std::pair<std::vector<int>, std::vector<std::vector<T>>> readConfig(string filename, char splitChar = ' ',
+	static std::pair<std::vector<int>, std::vector<std::vector<T>>>readConfig(string filename, char splitChar = ' ',
 			char kvSplitChar = ':', bool skipfirstline = false, bool verbose = false) {
 		std::pair<std::vector<int>, std::vector<std::vector<T>>> r;
 
